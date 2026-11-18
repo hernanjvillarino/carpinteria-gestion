@@ -55,12 +55,13 @@ return new class extends Migration
             $table->foreignId('cutlist_id')->constrained()->cascadeOnDelete();
             $table->foreignId('material_id')->nullable()->constrained()->nullOnDelete();
             $table->string('source_material', 150); // nombre tal como vino del CSV
-            $table->string('name', 150);
-            $table->decimal('length_mm', 7, 1); // en sentido de la veta
+            $table->string('name', 120); // "Descripción" en corteOPT: máx. 120 caracteres
+            $table->decimal('length_mm', 7, 1); // en sentido de la veta / a lo largo de la placa
             $table->decimal('width_mm', 7, 1);
             $table->decimal('thickness_mm', 5, 1);
             $table->unsignedSmallInteger('qty');
-            $table->boolean('grain_locked')->default(false);
+            $table->boolean('can_rotate')->default(false); // "Puede girar" en corteOPT
+            // Canto por lado (L = lados de medida Largo, W = lados de medida Ancho); se exporta como cantidad 0 a 2.
             foreach (['edge_l1_id', 'edge_l2_id', 'edge_w1_id', 'edge_w2_id'] as $edge) {
                 $table->foreignId($edge)->nullable()->constrained('materials')->nullOnDelete();
             }

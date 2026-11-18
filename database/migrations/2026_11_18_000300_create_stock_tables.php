@@ -22,6 +22,14 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        // Lista cerrada de colores de placa: corteOPT agrupa placas y retazos por el texto exacto del color.
+        Schema::create('board_colors', function (Blueprint $table) {
+            $table->id();
+            $table->string('name', 60)->unique();
+            $table->boolean('is_active')->default(true);
+            $table->timestamps();
+        });
+
         Schema::create('materials', function (Blueprint $table) {
             $table->id();
             $table->foreignId('material_category_id')->constrained();
@@ -30,6 +38,11 @@ return new class extends Migration
             $table->string('name', 150);
             $table->string('unit', 10); // placa | m | m2 | unidad | kg | litro
             $table->decimal('thickness_mm', 5, 1)->nullable();
+            // Datos de placa para exportar a corteOPT (docs/corteopt-importacion.md)
+            $table->string('corteopt_material', 20)->nullable(); // melamina, mdf, enchapado... (App\Enums\CorteOptMaterial)
+            $table->foreignId('board_color_id')->nullable()->constrained()->nullOnDelete();
+            $table->string('characteristic', 60)->nullable(); // hidrófugo, 2 caras, texturado
+            $table->string('brand', 40)->nullable(); // Faplac, Egger
             $table->unsignedInteger('sheet_length_mm')->nullable();
             $table->unsignedInteger('sheet_width_mm')->nullable();
             $table->boolean('has_grain')->default(false);
@@ -70,6 +83,7 @@ return new class extends Migration
         Schema::dropIfExists('stock_movements');
         Schema::dropIfExists('material_prices');
         Schema::dropIfExists('materials');
+        Schema::dropIfExists('board_colors');
         Schema::dropIfExists('material_categories');
         Schema::dropIfExists('suppliers');
     }

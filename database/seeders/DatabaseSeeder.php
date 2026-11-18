@@ -13,7 +13,7 @@ class DatabaseSeeder extends Seeder
 {
     public function run(): void
     {
-        $this->call(StageSeeder::class);
+        $this->call([StageSeeder::class, BoardColorSeeder::class]);
 
         if (! app()->environment('local', 'testing')) {
             return; // en producción solo se cargan las etapas
