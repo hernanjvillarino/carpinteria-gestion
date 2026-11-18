@@ -7,3 +7,25 @@
     --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
         'Segoe UI Symbol', 'Noto Color Emoji';
 }
+
+@theme {
+    --color-madera-50: #faf6f1;
+    --color-madera-100: #f1e6d8;
+    --color-madera-600: #8b5a2b;
+    --color-madera-700: #6f4520;
+    --color-madera-900: #3b2410;
+}
+
+@layer components {
+    .card { @apply rounded-lg border border-stone-200 bg-white p-4 shadow-sm sm:p-6; }
+    .label { @apply mb-1 block text-sm font-medium text-stone-700; }
+    .input { @apply block w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm shadow-sm focus:border-madera-600 focus:ring-2 focus:ring-madera-100 focus:outline-none; }
+    .btn { @apply inline-flex items-center justify-center gap-2 rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium text-stone-700 hover:bg-stone-50; }
+    .btn-primary { @apply inline-flex items-center justify-center gap-2 rounded-md bg-madera-600 px-4 py-2 text-sm font-medium text-white hover:bg-madera-700; }
+    .btn-danger { @apply inline-flex items-center justify-center gap-2 rounded-md border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50; }
+    .table { @apply min-w-full divide-y divide-stone-200 text-sm; }
+    .table th { @apply px-3 py-2 text-left text-xs font-semibold tracking-wide text-stone-500 uppercase; }
+    .table td { @apply px-3 py-2 align-top; }
+    .badge { @apply inline-flex items-center rounded-full bg-stone-100 px-2 py-0.5 text-xs font-medium text-stone-700; }
+    .error { @apply mt-1 text-sm text-red-600; }
+}
