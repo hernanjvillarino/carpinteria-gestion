@@ -3,15 +3,20 @@
 namespace App\Http\Controllers\Portal;
 
 use App\Enums\DesignStatus;
+use App\Enums\QuoteStatus;
 use App\Enums\Role;
 use App\Http\Controllers\Controller;
 use App\Models\Design;
+use App\Models\Quote;
 use App\Models\Stage;
 use App\Models\User;
 use App\Models\WorkOrder;
 use App\Notifications\DesignAnswered;
+use App\Notifications\QuoteAnswered;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\ValidationException;
@@ -24,7 +29,11 @@ class PortalController extends Controller
     {
         $orders = $request->user()->client?->workOrders()
             ->with(['stage'])
-            ->withCount(['designs as pending_designs_count' => fn ($q) => $q->where('status', DesignStatus::Enviado)])
+            ->withCount([
+                'designs as pending_designs_count' => fn ($q) => $q->where('status', DesignStatus::Enviado),
+                'quotes as pending_quotes_count' => fn ($q) => $q->where('status', QuoteStatus::Enviado)
+                    ->where(fn ($q) => $q->whereNull('valid_until')->orWhereDate('valid_until', '>=', today())),
+            ])
             ->latest()->get() ?? collect();
 
         return view('portal.index', [
@@ -40,6 +49,7 @@ class PortalController extends Controller
         $trabajo->load([
             'stage',
             'designs' => fn ($q) => $q->where('status', '!=', DesignStatus::Borrador),
+            'quotes' => fn ($q) => $q->where('status', '!=', QuoteStatus::Borrador)->with('items'),
             // Cambios de etapa visibles, más los avances que la administración publicó.
             'updates' => fn ($q) => $q
                 ->where(fn ($q) => $q->where('visible_to_client', true)
@@ -81,5 +91,54 @@ class PortalController extends Controller
         return back()->with('status', $approved
             ? '¡Gracias! Aprobaste el diseño. Ya podemos pasar a producción.'
             : 'Recibimos tus comentarios. Te vamos a enviar una nueva versión.');
+    }
+
+    public function answerQuote(Request $request, Quote $quote): RedirectResponse
+    {
+        $this->authorizeClientQuote($request, $quote);
+
+        if ($quote->status !== QuoteStatus::Enviado) {
+            throw ValidationException::withMessages(['quote' => 'Este presupuesto ya no se puede responder.']);
+        }
+        if ($quote->isExpired()) {
+            throw ValidationException::withMessages(['quote' => 'Este presupuesto venció. Pedinos uno actualizado.']);
+        }
+
+        $data = $request->validate([
+            'decision' => ['required', 'in:aceptar,rechazar'],
+            'feedback' => ['nullable', 'string', 'max:5000'],
+        ]);
+        $accepted = $data['decision'] === 'aceptar';
+
+        $quote->update([
+            'status' => $accepted ? QuoteStatus::Aceptado : QuoteStatus::Rechazado,
+            'accepted_at' => $accepted ? now() : null,
+            'client_feedback' => $data['feedback'] ?? null,
+            'responded_at' => now(),
+            'responded_by' => $request->user()->id,
+        ]);
+
+        Notification::send(User::query()->where('role', Role::Admin)->where('is_active', true)->get(), new QuoteAnswered($quote));
+
+        return back()->with('status', $accepted
+            ? '¡Gracias! Aceptaste el presupuesto. Nos ponemos en contacto para coordinar.'
+            : 'Recibimos tu respuesta. Si querés, contanos qué ajustar y te mandamos otra versión.');
+    }
+
+    /** PDF para el cliente: sin precios unitarios ni costos internos. */
+    public function quotePdf(Request $request, Quote $quote): Response
+    {
+        $this->authorizeClientQuote($request, $quote);
+        $quote->load(['workOrder.client.gatedCommunity', 'items']);
+
+        return Pdf::loadView('presupuestos.pdf', ['quote' => $quote, 'internal' => false])
+            ->download("presupuesto-{$quote->workOrder->code}-v{$quote->version}.pdf");
+    }
+
+    private function authorizeClientQuote(Request $request, Quote $quote): void
+    {
+        Gate::authorize('view', $quote->workOrder);
+        abort_unless($request->user()->role === Role::Cliente, 403);
+        abort_if($quote->status === QuoteStatus::Borrador, 404);
     }
 }

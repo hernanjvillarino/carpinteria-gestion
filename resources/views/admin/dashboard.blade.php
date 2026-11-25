@@ -44,6 +44,15 @@
         </section>
 
         <section class="card">
+            @if ($lowStock->isNotEmpty())
+                <h2 class="mb-3 font-semibold text-red-800">Insumos bajo el mínimo</h2>
+                @foreach ($lowStock as $m)
+                    <a href="{{ route('admin.stock.show', $m) }}" class="flex justify-between border-b border-stone-100 py-2 text-sm last:border-0">
+                        <span>{{ $m->name }}</span><span class="text-red-700">{{ qty($m->stock_qty) }} / {{ qty($m->min_stock) }} {{ $m->unit->label() }}</span>
+                    </a>
+                @endforeach
+                <div class="mb-6"></div>
+            @endif
             <h2 class="mb-3 font-semibold">Últimos avances</h2>
             @forelse ($recentUpdates as $update)
                 <a href="{{ route('admin.trabajos.show', $update->workOrder) }}" class="block border-b border-stone-100 py-2 text-sm last:border-0">

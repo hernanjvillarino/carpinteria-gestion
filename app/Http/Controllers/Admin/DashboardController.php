@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\DesignStatus;
 use App\Http\Controllers\Controller;
 use App\Models\Design;
+use App\Models\Material;
 use App\Models\Stage;
 use App\Models\WorkOrder;
 use App\Models\WorkOrderUpdate;
@@ -22,6 +23,7 @@ class DashboardController extends Controller
                 ->whereNull('delivered_at')->whereDate('estimated_delivery', '<', today())
                 ->orderBy('estimated_delivery')->get(),
             'unassigned' => WorkOrder::query()->with('client')->whereNull('delivered_at')->doesntHave('carpenters')->get(),
+            'lowStock' => Material::query()->belowMinimum()->orderBy('name')->get(),
             'designResponses' => Design::query()->with('workOrder.client')
                 ->whereIn('status', [DesignStatus::Aprobado, DesignStatus::Rechazado])
                 ->where('responded_at', '>=', now()->subDays(14))

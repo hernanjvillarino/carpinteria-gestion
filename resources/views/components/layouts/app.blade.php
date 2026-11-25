@@ -17,6 +17,7 @@
                     <a href="{{ route('admin.dashboard') }}" @class(['font-semibold text-madera-700' => request()->routeIs('admin.dashboard')])>Inicio</a>
                     <a href="{{ route('admin.trabajos.index') }}" @class(['font-semibold text-madera-700' => request()->routeIs('admin.trabajos.*')])>Trabajos</a>
                     <a href="{{ route('admin.clientes.index') }}" @class(['font-semibold text-madera-700' => request()->routeIs('admin.clientes.*')])>Clientes</a>
+ <a href="{{ route('admin.stock.index') }}" @class(['font-semibold text-madera-700' => request()->routeIs('admin.stock.*', 'admin.proveedores.*', 'admin.presupuestos.*')])>Stock</a>
                     <a href="{{ route('admin.barrios.index') }}" @class(['font-semibold text-madera-700' => request()->routeIs('admin.barrios.*')])>Barrios</a>
                     <a href="{{ route('admin.usuarios.index') }}" @class(['font-semibold text-madera-700' => request()->routeIs('admin.usuarios.*')])>Equipo</a>
                 @elseif ($user->role === \App\Enums\Role::Carpintero)

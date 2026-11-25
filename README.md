@@ -18,3 +18,7 @@ php artisan serve
 ## Emails al cliente
 
 El sistema avisa por email cuando un pedido pasa a una etapa visible y cuando hay un diseño para aprobar, y avisa a los administradores cuando el cliente responde. Los emails salen por la cola: en producción configurá `MAIL_*` en `.env` y dejá corriendo `php artisan queue:work` (con Supervisor o el programador de tareas del hosting).
+
+## Presupuestos
+
+Los datos de la carpintería que salen en el PDF y el margen e IVA por defecto se configuran en `.env` (`EMPRESA_*`, `PRESUPUESTO_MARGEN`, `PRESUPUESTO_IVA`). El cliente ve el presupuesto sin precios unitarios ni margen; el PDF interno del admin muestra el detalle de costos.
