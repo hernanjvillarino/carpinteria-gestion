@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\DesignFileController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\Portal\PortalController;
 use App\Http\Controllers\Taller\WorkshopController;
@@ -22,6 +23,8 @@ Route::middleware('auth')->group(function () {
 
     Route::post('/trabajos/{workOrder}/avances', [WorkOrderUpdateController::class, 'store'])->name('trabajos.avances.store');
     Route::get('/fotos/{photo}', [WorkOrderPhotoController::class, 'show'])->name('fotos.show');
+    Route::get('/disenos/{design}/imagen', [DesignFileController::class, 'preview'])->name('disenos.preview');
+    Route::get('/disenos/{design}/sketchup', [DesignFileController::class, 'skp'])->name('disenos.skp');
 
     Route::prefix('admin')->name('admin.')->middleware('role:admin')->group(function () {
         Route::get('/', Admin\DashboardController::class)->name('dashboard');
@@ -29,6 +32,9 @@ Route::middleware('auth')->group(function () {
         Route::resource('clientes', Admin\ClientController::class)->parameters(['clientes' => 'cliente']);
         Route::resource('barrios', Admin\GatedCommunityController::class)->except('show')->parameters(['barrios' => 'barrio']);
         Route::resource('usuarios', Admin\UserController::class)->except(['show', 'destroy'])->parameters(['usuarios' => 'usuario']);
+        Route::post('/trabajos/{trabajo}/disenos', [Admin\DesignController::class, 'store'])->name('disenos.store');
+        Route::post('/disenos/{design}/enviar', [Admin\DesignController::class, 'send'])->name('disenos.send');
+        Route::delete('/disenos/{design}', [Admin\DesignController::class, 'destroy'])->name('disenos.destroy');
         Route::patch('/fotos/{photo}/visibilidad', [WorkOrderPhotoController::class, 'toggleVisibility'])->name('fotos.visibilidad');
     });
 
@@ -39,5 +45,7 @@ Route::middleware('auth')->group(function () {
 
     Route::prefix('mi-cuenta')->name('portal.')->middleware('role:cliente')->group(function () {
         Route::get('/', [PortalController::class, 'index'])->name('index');
+        Route::get('/pedidos/{trabajo}', [PortalController::class, 'show'])->name('trabajos.show');
+        Route::post('/disenos/{design}/respuesta', [PortalController::class, 'answerDesign'])->name('disenos.answer');
     });
 });

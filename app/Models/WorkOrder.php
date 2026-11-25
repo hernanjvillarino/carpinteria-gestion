@@ -2,7 +2,9 @@
 
 namespace App\Models;
 
+use App\Enums\DesignStatus;
 use App\Enums\Priority;
+use App\Notifications\WorkOrderStageChanged;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -71,6 +73,16 @@ class WorkOrder extends Model
         return $this->hasMany(WorkOrderUpdate::class)->latest()->latest('id');
     }
 
+    public function designs(): HasMany
+    {
+        return $this->hasMany(Design::class)->orderByDesc('version');
+    }
+
+    public function approvedDesign(): ?Design
+    {
+        return $this->designs()->where('status', DesignStatus::Aprobado)->first();
+    }
+
     public function isAssignedTo(User $user): bool
     {
         return $this->carpenters()->whereKey($user->id)->exists();
@@ -83,7 +95,7 @@ class WorkOrder extends Model
      */
     public function recordUpdate(User $by, ?Stage $toStage, ?string $comment, bool $visibleToClient, array $photos = []): WorkOrderUpdate
     {
-        return DB::transaction(function () use ($by, $toStage, $comment, $visibleToClient, $photos) {
+        $update = DB::transaction(function () use ($by, $toStage, $comment, $visibleToClient, $photos) {
             $fromStageId = $this->stage_id;
             $changesStage = $toStage && $toStage->id !== $fromStageId;
 
@@ -113,5 +125,11 @@ class WorkOrder extends Model
 
             return $update;
         });
+
+        if ($update->to_stage_id && $toStage->visible_to_client) {
+            $this->client->user?->notify(new WorkOrderStageChanged($this, $toStage));
+        }
+
+        return $update;
     }
 }

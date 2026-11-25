@@ -25,6 +25,16 @@
                 <p class="text-sm text-stone-500">No hay trabajos atrasados.</p>
             @endforelse
 
+            <h2 class="mt-6 mb-3 font-semibold">Respuestas de clientes a diseños (14 días)</h2>
+            @forelse ($designResponses as $design)
+                <a href="{{ route('admin.trabajos.show', $design->workOrder) }}" class="flex justify-between border-b border-stone-100 py-2 text-sm last:border-0">
+                    <span>{{ $design->workOrder->code }} · {{ $design->workOrder->client->name }} · v{{ $design->version }}</span>
+                    <span class="badge {{ $design->status->badgeClasses() }}">{{ $design->status->label() }}</span>
+                </a>
+            @empty
+                <p class="text-sm text-stone-500">Sin respuestas recientes.</p>
+            @endforelse
+
             <h2 class="mt-6 mb-3 font-semibold">Sin carpintero asignado</h2>
             @forelse ($unassigned as $order)
                 <a href="{{ route('admin.trabajos.edit', $order) }}" class="block border-b border-stone-100 py-2 text-sm last:border-0">{{ $order->code }} · {{ $order->title }} <span class="text-stone-500">({{ $order->client->name }})</span></a>

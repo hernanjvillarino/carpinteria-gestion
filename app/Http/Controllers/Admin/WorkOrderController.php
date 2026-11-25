@@ -74,7 +74,7 @@ class WorkOrderController extends Controller
 
     public function show(WorkOrder $trabajo): View
     {
-        $trabajo->load(['client.gatedCommunity', 'stage', 'carpenters', 'creator', 'updates' => fn ($q) => $q->with(['user', 'fromStage', 'toStage', 'photos'])]);
+        $trabajo->load(['client.gatedCommunity', 'stage', 'carpenters', 'creator', 'designs', 'updates' => fn ($q) => $q->with(['user', 'fromStage', 'toStage', 'photos'])]);
 
         return view('trabajos.show', [
             'order' => $trabajo,

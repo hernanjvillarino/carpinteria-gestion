@@ -59,6 +59,8 @@
                 </form>
             </section>
 
+            @include('partials.designs')
+
             {{-- Historial --}}
             <section class="card">
                 <h2 class="mb-3 font-semibold">Historial</h2>
