@@ -1,16 +1,27 @@
 <x-layouts.app title="Mis pedidos">
     <div class="space-y-4">
         @forelse ($orders as $order)
-            <div class="card">
+            @php($current = $order->stage->visible_to_client ? $order->stage : $stages->where('position', '<', $order->stage->position)->last())
+            @php($done = $stages->where('position', '<=', $order->stage->position)->count())
+            <a href="{{ route('portal.trabajos.show', $order) }}" class="card block hover:border-madera-600">
                 <div class="flex flex-wrap items-center justify-between gap-2">
-                    <h2 class="font-semibold">{{ $order->title }} <span class="text-sm font-normal text-stone-500">{{ $order->code }}</span></h2>
-                    <span class="badge">{{ $order->stage->visible_to_client ? $order->stage->name : 'En producción' }}</span>
+                    <h2 class="font-semibold text-stone-900">{{ $order->title }} <span class="text-sm font-normal text-stone-500">{{ $order->code }}</span></h2>
+                    @if ($order->pending_designs_count)
+                        <span class="badge !bg-amber-100 !text-amber-800">Tenés un diseño para aprobar</span>
+                    @endif
                 </div>
-                @if ($order->estimated_delivery)<p class="mt-1 text-sm text-stone-600">Entrega estimada: {{ $order->estimated_delivery->format('d/m/Y') }}</p>@endif
-            </div>
+                <div class="mt-3 h-2 overflow-hidden rounded-full bg-stone-100" role="progressbar" aria-valuemin="0" aria-valuemax="{{ $stages->count() }}" aria-valuenow="{{ $done }}">
+                    <div class="h-full rounded-full bg-madera-600" style="width: {{ $stages->count() ? round($done / $stages->count() * 100) : 0 }}%"></div>
+                </div>
+                <p class="mt-2 text-sm text-stone-600">
+                    Etapa actual: <span class="font-medium text-stone-900">{{ $current?->name ?? $order->stage->name }}</span>
+                    @if ($order->delivered_at) · Entregado el {{ $order->delivered_at->format('d/m/Y') }}
+                    @elseif ($order->estimated_delivery) · Entrega estimada {{ $order->estimated_delivery->format('d/m/Y') }}
+                    @endif
+                </p>
+            </a>
         @empty
-            <p class="text-stone-500">Todavía no tenés pedidos cargados.</p>
+            <div class="card text-stone-600">Todavía no tenés pedidos cargados. Cuando empecemos tu trabajo lo vas a ver acá.</div>
         @endforelse
-        <p class="text-sm text-stone-500">Muy pronto vas a poder ver acá cada etapa de tu pedido con fotos.</p>
     </div>
 </x-layouts.app>

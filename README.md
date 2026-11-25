@@ -14,3 +14,7 @@ php artisan migrate --seed
 npm install && npm run build
 php artisan serve
 ```
+
+## Emails al cliente
+
+El sistema avisa por email cuando un pedido pasa a una etapa visible y cuando hay un diseño para aprobar, y avisa a los administradores cuando el cliente responde. Los emails salen por la cola: en producción configurá `MAIL_*` en `.env` y dejá corriendo `php artisan queue:work` (con Supervisor o el programador de tareas del hosting).

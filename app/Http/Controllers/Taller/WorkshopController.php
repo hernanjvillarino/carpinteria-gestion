@@ -27,7 +27,7 @@ class WorkshopController extends Controller
     public function show(WorkOrder $trabajo): View
     {
         Gate::authorize('view', $trabajo);
-        $trabajo->load(['client.gatedCommunity', 'stage', 'carpenters', 'updates' => fn ($q) => $q->with(['user', 'fromStage', 'toStage', 'photos'])]);
+        $trabajo->load(['client.gatedCommunity', 'stage', 'carpenters', 'designs', 'updates' => fn ($q) => $q->with(['user', 'fromStage', 'toStage', 'photos'])]);
 
         return view('trabajos.show', [
             'order' => $trabajo,
