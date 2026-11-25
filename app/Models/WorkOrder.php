@@ -78,6 +78,16 @@ class WorkOrder extends Model
         return $this->hasMany(Design::class)->orderByDesc('version');
     }
 
+    public function quotes(): HasMany
+    {
+        return $this->hasMany(Quote::class)->orderByDesc('version');
+    }
+
+    public function stockMovements(): HasMany
+    {
+        return $this->hasMany(StockMovement::class)->latest()->latest('id');
+    }
+
     public function approvedDesign(): ?Design
     {
         return $this->designs()->where('status', DesignStatus::Aprobado)->first();

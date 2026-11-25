@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Taller;
 
 use App\Http\Controllers\Controller;
+use App\Models\Material;
 use App\Models\Stage;
 use App\Models\WorkOrder;
 use Illuminate\Http\Request;
@@ -27,11 +28,12 @@ class WorkshopController extends Controller
     public function show(WorkOrder $trabajo): View
     {
         Gate::authorize('view', $trabajo);
-        $trabajo->load(['client.gatedCommunity', 'stage', 'carpenters', 'designs', 'updates' => fn ($q) => $q->with(['user', 'fromStage', 'toStage', 'photos'])]);
+        $trabajo->load(['client.gatedCommunity', 'stage', 'carpenters', 'designs', 'stockMovements' => fn ($q) => $q->with(['material', 'user']), 'updates' => fn ($q) => $q->with(['user', 'fromStage', 'toStage', 'photos'])]);
 
         return view('trabajos.show', [
             'order' => $trabajo,
             'stages' => Stage::ordered(),
+            'materials' => Material::query()->where('is_active', true)->orderBy('name')->get(),
             'isAdmin' => false,
         ]);
     }

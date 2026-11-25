@@ -59,7 +59,13 @@
                 </form>
             </section>
 
+            @if ($isAdmin)
+                @include('partials.quotes')
+            @endif
+
             @include('partials.designs')
+
+            @include('partials.consumption')
 
             {{-- Historial --}}
             <section class="card">

@@ -1,4 +1,5 @@
 @php($pending = $order->designs->first(fn ($d) => $d->awaitsClient()))
+@php($pendingQuote = $order->quotes->first(fn ($q) => $q->status === \App\Enums\QuoteStatus::Enviado && ! $q->isExpired()))
 <x-layouts.app :title="$order->title">
     <p class="-mt-4 mb-6 text-sm text-stone-500">Pedido {{ $order->code }}
         @if ($order->delivered_at) · Entregado el {{ $order->delivered_at->format('d/m/Y') }}
@@ -28,6 +29,37 @@
             <p class="mt-3 text-sm text-stone-600">Ahora estamos preparando la producción de tu pedido.</p>
         @endunless
     </section>
+
+    {{-- Presupuesto para responder --}}
+    @if ($pendingQuote)
+        <section class="card mb-6 border-amber-300">
+            <h2 class="mb-1 font-semibold">Presupuesto para revisar</h2>
+            <p class="mb-4 text-sm text-stone-600">Versión {{ $pendingQuote->version }}@if ($pendingQuote->valid_until), válido hasta el {{ $pendingQuote->valid_until->format('d/m/Y') }}@endif.</p>
+            <ul class="mb-4 divide-y divide-stone-100 text-sm">
+                @foreach ($pendingQuote->items as $item)
+                    <li class="flex justify-between py-1"><span>{{ $item->description }}</span><span class="text-stone-500">{{ qty($item->qty) }} {{ $item->unit }}</span></li>
+                @endforeach
+                @if ((float) $pendingQuote->labor_cost > 0)<li class="py-1">Mano de obra, fabricación e instalación</li>@endif
+            </ul>
+            <dl class="mb-4 space-y-1 text-sm">
+                <div class="flex justify-between"><dt class="text-stone-500">Subtotal</dt><dd>{{ money($pendingQuote->subtotal) }}</dd></div>
+                <div class="flex justify-between"><dt class="text-stone-500">IVA {{ qty($pendingQuote->tax_pct) }}%</dt><dd>{{ money($pendingQuote->taxAmount()) }}</dd></div>
+                <div class="flex justify-between text-lg font-semibold"><dt>Total</dt><dd>{{ money($pendingQuote->total) }}</dd></div>
+            </dl>
+            @if ($pendingQuote->notes)<p class="mb-4 text-sm whitespace-pre-line">{{ $pendingQuote->notes }}</p>@endif
+            @error('quote')<p class="error mb-2">{{ $message }}</p>@enderror
+            <form method="POST" action="{{ route('portal.presupuestos.answer', $pendingQuote) }}" class="space-y-3">
+                @csrf
+                <label for="quote_feedback" class="label">Comentario (opcional)</label>
+                <textarea id="quote_feedback" name="feedback" rows="2" class="input" placeholder="Dudas o ajustes que quieras pedir">{{ old('feedback') }}</textarea>
+                <div class="grid gap-2 sm:grid-cols-3">
+                    <button name="decision" value="aceptar" class="btn-primary" onclick="return confirm('¿Confirmás que aceptás el presupuesto?')">Acepto el presupuesto</button>
+                    <button name="decision" value="rechazar" class="btn">No lo acepto</button>
+                    <a href="{{ route('portal.presupuestos.pdf', $pendingQuote) }}" class="btn">Descargar PDF</a>
+                </div>
+            </form>
+        </section>
+    @endif
 
     {{-- Diseño para aprobar --}}
     @if ($pending)
@@ -83,8 +115,20 @@
             </ol>
         </section>
 
-        {{-- Historial de diseños --}}
-        <aside class="card h-fit">
+        {{-- Historial de diseños y presupuestos --}}
+        <aside class="card h-fit space-y-6">
+            @if ($order->quotes->isNotEmpty())
+                <div>
+                    <h2 class="mb-3 font-semibold">Presupuestos</h2>
+                    @foreach ($order->quotes as $q)
+                        <div class="flex items-center justify-between border-b border-stone-100 py-2 text-sm last:border-0">
+                            <a href="{{ route('portal.presupuestos.pdf', $q) }}" class="text-madera-700 underline">Versión {{ $q->version }} · {{ money($q->total) }}</a>
+                            <span class="badge {{ ($q->isExpired() ? \App\Enums\QuoteStatus::Vencido : $q->status)->badgeClasses() }}">{{ $q->isExpired() ? 'Vencido' : $q->status->label() }}</span>
+                        </div>
+                    @endforeach
+                </div>
+            @endif
+            <div>
             <h2 class="mb-3 font-semibold">Diseños</h2>
             @forelse ($order->designs as $design)
                 <div class="flex items-center justify-between border-b border-stone-100 py-2 text-sm last:border-0">
@@ -94,6 +138,7 @@
             @empty
                 <p class="text-sm text-stone-500">Cuando tengamos el diseño listo te lo mandamos para que lo apruebes.</p>
             @endforelse
+            </div>
         </aside>
     </div>
 </x-layouts.app>

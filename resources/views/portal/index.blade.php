@@ -6,6 +6,9 @@
             <a href="{{ route('portal.trabajos.show', $order) }}" class="card block hover:border-madera-600">
                 <div class="flex flex-wrap items-center justify-between gap-2">
                     <h2 class="font-semibold text-stone-900">{{ $order->title }} <span class="text-sm font-normal text-stone-500">{{ $order->code }}</span></h2>
+                    @if ($order->pending_quotes_count)
+                        <span class="badge !bg-amber-100 !text-amber-800">Tenés un presupuesto para revisar</span>
+                    @endif
                     @if ($order->pending_designs_count)
                         <span class="badge !bg-amber-100 !text-amber-800">Tenés un diseño para aprobar</span>
                     @endif

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\Priority;
 use App\Http\Controllers\Controller;
 use App\Models\Client;
+use App\Models\Material;
 use App\Models\Stage;
 use App\Models\User;
 use App\Models\WorkOrder;
@@ -74,11 +75,12 @@ class WorkOrderController extends Controller
 
     public function show(WorkOrder $trabajo): View
     {
-        $trabajo->load(['client.gatedCommunity', 'stage', 'carpenters', 'creator', 'designs', 'updates' => fn ($q) => $q->with(['user', 'fromStage', 'toStage', 'photos'])]);
+        $trabajo->load(['client.gatedCommunity', 'stage', 'carpenters', 'creator', 'designs', 'quotes', 'stockMovements' => fn ($q) => $q->with(['material', 'user']), 'updates' => fn ($q) => $q->with(['user', 'fromStage', 'toStage', 'photos'])]);
 
         return view('trabajos.show', [
             'order' => $trabajo,
             'stages' => Stage::ordered(),
+            'materials' => Material::query()->where('is_active', true)->orderBy('name')->get(),
             'isAdmin' => true,
         ]);
     }
