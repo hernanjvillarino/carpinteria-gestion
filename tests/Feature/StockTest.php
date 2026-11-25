@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Enums\StockMovementType;
+use App\Models\BoardColor;
 use App\Models\Material;
+use App\Models\MaterialCategory;
 use App\Models\User;
 use App\Models\WorkOrder;
 use Database\Seeders\BoardColorSeeder;
@@ -29,15 +31,15 @@ class StockTest extends TestCase
     {
         $this->actingAs($this->admin)->post('/admin/stock', [
             'name' => 'Melamina Blanco 18 mm',
-            'material_category_id' => 1,
+            'material_category_id' => MaterialCategory::value('id'),
             'unit' => 'placa',
             'price' => 98000,
             'min_stock' => 4,
             'initial_stock' => 10,
             'corteopt_material' => 'melamina',
             'thickness_mm' => 18,
-            'board_color_id' => 1,
-        ])->assertRedirect()->assertRedirect()->assertSessionHasNoErrors();
+            'board_color_id' => BoardColor::value('id'),
+        ])->assertRedirect()->assertSessionHasNoErrors();
 
         $m = Material::sole();
         $this->assertSame('98000.00', $m->current_price);
@@ -49,7 +51,7 @@ class StockTest extends TestCase
     public function test_board_requires_thickness_and_color(): void
     {
         $this->actingAs($this->admin)->post('/admin/stock', [
-            'name' => 'Placa', 'material_category_id' => 1, 'unit' => 'placa', 'price' => 1, 'min_stock' => 0,
+            'name' => 'Placa', 'material_category_id' => MaterialCategory::value('id'), 'unit' => 'placa', 'price' => 1, 'min_stock' => 0,
             'corteopt_material' => 'mdf',
         ])->assertSessionHasErrors(['thickness_mm', 'board_color_id']);
     }
