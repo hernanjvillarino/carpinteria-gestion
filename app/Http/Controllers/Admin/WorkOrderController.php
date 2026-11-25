@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Enums\Priority;
 use App\Http\Controllers\Controller;
 use App\Models\Client;
+use App\Models\InstructionTemplate;
 use App\Models\Material;
 use App\Models\Stage;
 use App\Models\User;
@@ -52,6 +53,8 @@ class WorkOrderController extends Controller
         return view('admin.trabajos.form', $this->formData(new WorkOrder([
             'client_id' => $request->integer('client_id') ?: null,
             'priority' => Priority::Normal,
+            'lead_time_days' => config('carpinteria.default_lead_time_days'),
+            'started_on' => today(),
         ])));
     }
 
@@ -61,11 +64,12 @@ class WorkOrderController extends Controller
 
         $order = DB::transaction(function () use ($data, $request) {
             $order = WorkOrder::create([
-                ...collect($data)->except('carpinteros', 'lead_id')->all(),
+                ...$this->orderFields($data),
                 'stage_id' => $data['stage_id'] ?? Stage::query()->orderBy('position')->value('id'),
                 'created_by' => $request->user()->id,
             ]);
-            $this->syncCarpenters($order, $data);
+            $order->addTasks($request->user(), $data['instrucciones'] ?? [], $data['instrucciones_extra'] ?? null);
+            $order->assignCarpenters($data['carpinteros'] ?? [], $this->leadId($data));
 
             return $order;
         });
@@ -75,19 +79,20 @@ class WorkOrderController extends Controller
 
     public function show(WorkOrder $trabajo): View
     {
-        $trabajo->load(['client.gatedCommunity', 'stage', 'carpenters', 'creator', 'designs', 'quotes', 'stockMovements' => fn ($q) => $q->with(['material', 'user']), 'updates' => fn ($q) => $q->with(['user', 'fromStage', 'toStage', 'photos'])]);
+        $trabajo->load(['client.gatedCommunity', 'stage', 'carpenters', 'creator', 'designs', 'quotes', 'tasks.doneBy', 'rating.photos', 'rating.user', 'stockMovements' => fn ($q) => $q->with(['material', 'user']), 'updates' => fn ($q) => $q->with(['user', 'fromStage', 'toStage', 'photos'])]);
 
         return view('trabajos.show', [
             'order' => $trabajo,
             'stages' => Stage::ordered(),
             'materials' => Material::query()->where('is_active', true)->orderBy('name')->get(),
+            'instructionTemplates' => InstructionTemplate::query()->active()->get(),
             'isAdmin' => true,
         ]);
     }
 
     public function edit(WorkOrder $trabajo): View
     {
-        return view('admin.trabajos.form', $this->formData($trabajo->load('carpenters')));
+        return view('admin.trabajos.form', $this->formData($trabajo->load(['carpenters', 'tasks'])));
     }
 
     public function update(Request $request, WorkOrder $trabajo): RedirectResponse
@@ -96,8 +101,9 @@ class WorkOrderController extends Controller
 
         DB::transaction(function () use ($trabajo, $data, $request) {
             $newStage = isset($data['stage_id']) ? Stage::find($data['stage_id']) : null;
-            $trabajo->update(collect($data)->except('carpinteros', 'lead_id', 'stage_id')->all());
-            $this->syncCarpenters($trabajo, $data);
+            $trabajo->update(collect($this->orderFields($data))->except('stage_id')->all());
+            $trabajo->addTasks($request->user(), $data['instrucciones'] ?? [], $data['instrucciones_extra'] ?? null);
+            $trabajo->assignCarpenters($data['carpinteros'] ?? [], $this->leadId($data));
 
             // Un cambio de etapa desde la edición también queda en el historial.
             if ($newStage && $newStage->id !== $trabajo->stage_id) {
@@ -123,6 +129,7 @@ class WorkOrderController extends Controller
             'stages' => Stage::ordered(),
             'carpinteros' => User::carpinteros()->orderBy('name')->get(),
             'priorities' => Priority::cases(),
+            'instructionTemplates' => InstructionTemplate::query()->active()->get(),
         ];
     }
 
@@ -135,18 +142,24 @@ class WorkOrderController extends Controller
             'install_address' => ['nullable', 'string', 'max:255'],
             'stage_id' => ['nullable', 'exists:stages,id'],
             'priority' => ['required', Rule::enum(Priority::class)],
-            'estimated_delivery' => ['nullable', 'date'],
+            'lead_time_days' => ['required', 'integer', 'min:1', 'max:730'],
+            'started_on' => ['required', 'date'],
+            'instrucciones' => ['array'],
+            'instrucciones.*' => ['integer', 'exists:instruction_templates,id'],
+            'instrucciones_extra' => ['nullable', 'string', 'max:3000'],
             'carpinteros' => ['array'],
             'carpinteros.*' => [Rule::exists('users', 'id')->where('role', 'carpintero')],
             'lead_id' => ['nullable', 'integer', 'in_array:carpinteros.*'],
         ]);
     }
 
-    private function syncCarpenters(WorkOrder $order, array $data): void
+    private function orderFields(array $data): array
     {
-        $lead = (int) ($data['lead_id'] ?? 0);
-        $order->carpenters()->sync(
-            collect($data['carpinteros'] ?? [])->mapWithKeys(fn ($id) => [(int) $id => ['is_lead' => (int) $id === $lead]])->all()
-        );
+        return collect($data)->except('carpinteros', 'lead_id', 'instrucciones', 'instrucciones_extra')->all();
+    }
+
+    private function leadId(array $data): ?int
+    {
+        return isset($data['lead_id']) ? (int) $data['lead_id'] : null;
     }
 }

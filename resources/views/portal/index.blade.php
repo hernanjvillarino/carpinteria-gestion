@@ -12,6 +12,9 @@
                     @if ($order->pending_designs_count)
                         <span class="badge !bg-amber-100 !text-amber-800">Tenés un diseño para aprobar</span>
                     @endif
+                    @if ($order->delivered_at && ! $order->rating_exists)
+                        <span class="badge !bg-emerald-100 !text-emerald-800">Calificá el trabajo</span>
+                    @endif
                 </div>
                 <div class="mt-3 h-2 overflow-hidden rounded-full bg-stone-100" role="progressbar" aria-valuemin="0" aria-valuemax="{{ $stages->count() }}" aria-valuenow="{{ $done }}">
                     <div class="h-full rounded-full bg-madera-600" style="width: {{ $stages->count() ? round($done / $stages->count() * 100) : 0 }}%"></div>

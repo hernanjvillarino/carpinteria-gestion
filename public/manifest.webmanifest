@@ -1,0 +1,17 @@
+{
+    "name": "Carpintería · Gestión",
+    "short_name": "Carpintería",
+    "description": "Trabajos, avances con fotos, avisos y stock de la carpintería.",
+    "lang": "es-AR",
+    "start_url": "/panel",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "portrait",
+    "background_color": "#faf6f1",
+    "theme_color": "#6f4520",
+    "icons": [
+        { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+        { "src": "/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+        { "src": "/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    ]
+}

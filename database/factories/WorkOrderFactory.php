@@ -18,7 +18,8 @@ class WorkOrderFactory extends Factory
             'description' => 'Melamina blanca 18 mm, frentes con tapacanto de 2 mm y bisagras cierre suave.',
             'stage_id' => fn () => Stage::query()->orderBy('position')->value('id'),
             'priority' => Priority::Normal,
-            'estimated_delivery' => now()->addWeeks(6)->toDateString(),
+            'lead_time_days' => 45,
+            'started_on' => now()->subDays(fake()->numberBetween(0, 20))->toDateString(),
             'created_by' => User::factory()->admin(),
         ];
     }

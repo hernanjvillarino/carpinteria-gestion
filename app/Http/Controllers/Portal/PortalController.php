@@ -28,7 +28,7 @@ class PortalController extends Controller
     public function index(Request $request): View
     {
         $orders = $request->user()->client?->workOrders()
-            ->with(['stage'])
+            ->with(['stage'])->withExists('rating')
             ->withCount([
                 'designs as pending_designs_count' => fn ($q) => $q->where('status', DesignStatus::Enviado),
                 'quotes as pending_quotes_count' => fn ($q) => $q->where('status', QuoteStatus::Enviado)
@@ -47,7 +47,7 @@ class PortalController extends Controller
         Gate::authorize('view', $trabajo);
 
         $trabajo->load([
-            'stage',
+            'stage', 'rating.photos',
             'designs' => fn ($q) => $q->where('status', '!=', DesignStatus::Borrador),
             'quotes' => fn ($q) => $q->where('status', '!=', QuoteStatus::Borrador)->with('items'),
             // Cambios de etapa visibles, más los avances que la administración publicó.
@@ -118,7 +118,13 @@ class PortalController extends Controller
             'responded_by' => $request->user()->id,
         ]);
 
-        Notification::send(User::query()->where('role', Role::Admin)->where('is_active', true)->get(), new QuoteAnswered($quote));
+        // El plazo de entrega empieza a correr cuando el cliente acepta el primer presupuesto.
+        $order = $quote->workOrder;
+        if ($accepted && ! $order->quotes()->where('status', QuoteStatus::Aceptado)->whereKeyNot($quote->id)->exists()) {
+            $order->update(['started_on' => today()]);
+        }
+
+        Notification::send(User::query()->admins()->get(), new QuoteAnswered($quote));
 
         return back()->with('status', $accepted
             ? '¡Gracias! Aceptaste el presupuesto. Nos ponemos en contacto para coordinar.'
