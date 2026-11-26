@@ -17,6 +17,16 @@
         @endforeach
     </ol>
 
+    @if (! empty($accessWarnings))
+        <div class="mb-6 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800" role="alert">
+            <p class="font-semibold">Ojo: no todos los asignados pueden entrar a {{ $order->client->gatedCommunity->name }}.</p>
+            <ul class="mt-1 list-inside list-disc">
+                @foreach ($accessWarnings as $name => $problem)<li>{{ $name }}: {{ $problem }}</li>@endforeach
+            </ul>
+            <a href="{{ route('admin.barrios.show', $order->client->gatedCommunity) }}" class="mt-1 inline-block underline">Ver la documentación del barrio</a>
+        </div>
+    @endif
+
     <div class="grid gap-6 lg:grid-cols-3">
         <div class="space-y-6 lg:col-span-2">
             @if ($isAdmin && $order->rating)

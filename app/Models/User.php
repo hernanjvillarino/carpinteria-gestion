@@ -59,6 +59,12 @@ class User extends Authenticatable
         return $this->hasOne(Client::class);
     }
 
+    /** Ficha de personal (documentación para entrar a los barrios). */
+    public function employee(): HasOne
+    {
+        return $this->hasOne(Employee::class);
+    }
+
     public function scopeCarpinteros($query)
     {
         return $query->where('role', Role::Carpintero)->where('is_active', true);

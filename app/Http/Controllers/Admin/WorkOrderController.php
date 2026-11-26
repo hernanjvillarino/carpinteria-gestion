@@ -87,7 +87,39 @@ class WorkOrderController extends Controller
             'materials' => Material::query()->where('is_active', true)->orderBy('name')->get(),
             'instructionTemplates' => InstructionTemplate::query()->active()->get(),
             'isAdmin' => true,
+            'accessWarnings' => $this->accessWarnings($trabajo),
         ]);
+    }
+
+    /**
+     * Carpinteros asignados que no pueden entrar al barrio del cliente
+     * porque les falta o se les venció documentación.
+     *
+     * @return array<string, string> nombre => qué le falta
+     */
+    private function accessWarnings(WorkOrder $order): array
+    {
+        $barrio = $order->client?->gatedCommunity;
+        if (! $barrio) {
+            return [];
+        }
+        $barrio->loadMissing(['requiredDocumentTypes', 'ownDocumentTypes']);
+        if ($barrio->requiredTypes()->isEmpty()) {
+            return [];
+        }
+        $order->carpenters->load('employee.documents.type');
+
+        $warnings = [];
+        foreach ($order->carpenters as $carpenter) {
+            $missing = $carpenter->employee?->missingFor($barrio);
+            if (! $carpenter->employee) {
+                $warnings[$carpenter->name] = 'no tiene ficha de personal con su documentación';
+            } elseif ($missing->isNotEmpty()) {
+                $warnings[$carpenter->name] = 'falta o venció: '.$missing->pluck('name')->join(', ');
+            }
+        }
+
+        return $warnings;
     }
 
     public function edit(WorkOrder $trabajo): View

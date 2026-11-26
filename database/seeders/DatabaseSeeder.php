@@ -5,6 +5,8 @@ namespace Database\Seeders;
 use App\Enums\StockMovementType;
 use App\Models\BoardColor;
 use App\Models\Client;
+use App\Models\DocumentType;
+use App\Models\Employee;
 use App\Models\GatedCommunity;
 use App\Models\InstructionTemplate;
 use App\Models\Material;
@@ -14,6 +16,7 @@ use App\Models\Supplier;
 use App\Models\User;
 use App\Models\WorkOrder;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Storage;
 
 class DatabaseSeeder extends Seeder
 {
@@ -77,6 +80,36 @@ class DatabaseSeeder extends Seeder
         ]);
 
         $this->seedStock($admin);
+        $this->seedStaffDocuments($admin, $carpinteros, $barrios);
+    }
+
+    /** Personal con documentación: uno al día, uno con la ART por vencer y un ayudante sin seguro. */
+    private function seedStaffDocuments(User $admin, $carpinteros, $barrios): void
+    {
+        $types = DocumentType::query()->pluck('id', 'name');
+        $barrios[0]->requiredDocumentTypes()->sync([$types['ART'], $types['Seguro de accidentes personales'], $types['DNI']]);
+        $barrios[1]->requiredDocumentTypes()->sync([$types['ART'], $types['DNI']]);
+        DocumentType::create(['name' => 'Credencial de ingreso', 'requires_expiry' => true, 'gated_community_id' => $barrios[1]->id]);
+
+        $people = [
+            [$carpinteros[0], ['ART' => 120, 'Seguro de accidentes personales' => 90, 'DNI' => null]],
+            [$carpinteros[1], ['ART' => 6, 'Seguro de accidentes personales' => 200, 'DNI' => null]],
+            [null, ['ART' => 120, 'DNI' => null]],
+        ];
+        foreach ($people as $i => [$user, $docs]) {
+            $employee = Employee::firstOrCreate(
+                ['user_id' => $user?->id, 'name' => $user?->name ?? 'Diego Acosta'],
+                ['dni' => (string) (30111222 + $i * 1111), 'cuil' => '20-'.(30111222 + $i * 1111).'-'.$i]
+            );
+            foreach ($docs as $name => $days) {
+                $path = "personal/{$employee->id}/ejemplo-".str($name)->slug().'.pdf';
+                Storage::disk('local')->put($path, '%PDF-1.4 ejemplo');
+                $employee->documents()->create([
+                    'document_type_id' => $types[$name], 'path' => $path, 'original_name' => str($name)->slug().'.pdf',
+                    'mime' => 'application/pdf', 'size' => 16, 'expires_on' => $days === null ? null : today()->addDays($days), 'uploaded_by' => $admin->id,
+                ]);
+            }
+        }
     }
 
     private function seedStock(User $admin): void

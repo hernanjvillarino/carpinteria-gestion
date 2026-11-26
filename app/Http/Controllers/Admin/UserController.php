@@ -31,7 +31,11 @@ class UserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validated($request);
-        User::create($data);
+        $user = User::create($data);
+        if ($user->role === Role::Carpintero) {
+            // Ficha de personal para cargarle la documentación de los barrios.
+            $user->employee()->create(['name' => $user->name, 'phone' => $user->phone]);
+        }
 
         return redirect()->route('admin.usuarios.index')->with('status', 'Usuario creado.');
     }
