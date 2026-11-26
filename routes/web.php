@@ -51,7 +51,15 @@ Route::middleware('auth')->group(function () {
         Route::delete('/indicaciones/{indicacion}', [Admin\InstructionTemplateController::class, 'destroy'])->name('indicaciones.destroy');
         Route::resource('trabajos', Admin\WorkOrderController::class)->parameters(['trabajos' => 'trabajo']);
         Route::resource('clientes', Admin\ClientController::class)->parameters(['clientes' => 'cliente']);
-        Route::resource('barrios', Admin\GatedCommunityController::class)->except('show')->parameters(['barrios' => 'barrio']);
+        Route::resource('barrios', Admin\GatedCommunityController::class)->parameters(['barrios' => 'barrio']);
+        Route::resource('personal', Admin\EmployeeController::class)->parameters(['personal' => 'empleado']);
+        Route::post('/personal/{empleado}/documentos', [Admin\EmployeeDocumentController::class, 'store'])->name('personal.documentos.store');
+        Route::get('/documentos/{document}', [Admin\EmployeeDocumentController::class, 'show'])->name('documentos.show');
+        Route::delete('/documentos/{document}', [Admin\EmployeeDocumentController::class, 'destroy'])->name('documentos.destroy');
+        Route::get('/documentacion', [Admin\DocumentTypeController::class, 'index'])->name('documentacion.index');
+        Route::post('/documentacion', [Admin\DocumentTypeController::class, 'store'])->name('documentacion.store');
+        Route::put('/documentacion/{tipo}', [Admin\DocumentTypeController::class, 'update'])->name('documentacion.update');
+        Route::delete('/documentacion/{tipo}', [Admin\DocumentTypeController::class, 'destroy'])->name('documentacion.destroy');
         Route::resource('usuarios', Admin\UserController::class)->except(['show', 'destroy'])->parameters(['usuarios' => 'usuario']);
         Route::post('/trabajos/{trabajo}/disenos', [Admin\DesignController::class, 'store'])->name('disenos.store');
         Route::post('/disenos/{design}/enviar', [Admin\DesignController::class, 'send'])->name('disenos.send');
