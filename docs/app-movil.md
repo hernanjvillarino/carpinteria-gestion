@@ -55,6 +55,24 @@ que inició sesión.
 > `ar.com.midominio.gestion`) y cambiarlo en `capacitor.config.ts`,
 > `android/app/build.gradle` y en Xcode antes de la primera publicación.
 
+## APK de prueba (sin Play Store)
+
+El workflow `.github/workflows/apk.yml` arma un APK instalable en GitHub
+Actions cada vez que cambia `mobile/`, o a mano desde *Actions → APK de prueba
+(Android) → Run workflow*, donde se puede escribir la URL del sistema.
+
+1. Definir la URL una vez: *Settings → Secrets and variables → Actions →
+   Variables → New repository variable* `CARPINTERIA_URL`.
+2. Opcional, para avisos push: secreto `GOOGLE_SERVICES_JSON` con el
+   contenido de `google-services.json` de Firebase.
+3. Abrir la ejecución terminada y bajar *carpinteria-apk-prueba* (un .zip con
+   el .apk adentro).
+4. En el celular: abrir el .apk, aceptar "Instalar apps de origen
+   desconocido" para el navegador o el administrador de archivos, e instalar.
+   Las versiones nuevas se instalan encima sin perder la sesión.
+
+Es un APK de depuración: sirve para probar, no para publicar.
+
 ## Compilar
 
 Requisitos: Node 22+, Android Studio (Android) y una Mac con Xcode 26+ (iPhone).

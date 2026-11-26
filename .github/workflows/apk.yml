@@ -1,0 +1,72 @@
+name: APK de prueba (Android)
+
+# Arma un APK instalable para probar la app en Android, sin pasar por Play Store.
+# Se descarga desde la pestaña Actions → la ejecución → "Artifacts".
+#
+# La URL del sistema sale de la variable del repositorio CARPINTERIA_URL
+# (Settings → Secrets and variables → Actions → Variables) o del campo al
+# lanzarlo a mano. Si existe el secreto GOOGLE_SERVICES_JSON (contenido de
+# google-services.json de Firebase) se incluyen los avisos push.
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: 'URL del sistema (por ejemplo https://gestion.midominio.com.ar)'
+        required: false
+  push:
+    paths: ['mobile/**', 'resources/js/native.js', '.github/workflows/apk.yml']
+  pull_request:
+    paths: ['mobile/**', 'resources/js/native.js', '.github/workflows/apk.yml']
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: mobile
+    env:
+      CARPINTERIA_URL: ${{ inputs.url || vars.CARPINTERIA_URL || 'https://gestion.example.com' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+
+      - name: Firebase (avisos push)
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          if [ -n "$GOOGLE_SERVICES_JSON" ]; then
+            printf '%s' "$GOOGLE_SERVICES_JSON" > android/app/google-services.json
+            echo "Con avisos push."
+          else
+            # Sin google-services.json el plugin de Firebase no puede arrancar: se arma sin avisos.
+            npm uninstall --no-audit --no-fund @capacitor-firebase/messaging firebase
+            echo "::warning::Sin el secreto GOOGLE_SERVICES_JSON: el APK no recibe avisos push."
+          fi
+
+      - run: npx cap sync android
+
+      - name: Compilar APK
+        working-directory: mobile/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+          cp app/build/outputs/apk/debug/app-debug.apk "$GITHUB_WORKSPACE/carpinteria-prueba.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: carpinteria-apk-prueba
+          path: carpinteria-prueba.apk
+          retention-days: 30
+
+      - name: Resumen
+        run: echo "APK armado para **$CARPINTERIA_URL**. Descargalo en *Artifacts* más abajo." >> "$GITHUB_STEP_SUMMARY"
