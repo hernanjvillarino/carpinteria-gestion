@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Ícono provisorio hasta tener el logo: tres tableros apilados con canto, paleta "Azul marino y arena". -->
+  <rect width="1024" height="1024" fill="#17263A"/>
+  <g transform="translate(272 300)">
+    <rect x="0" y="0" width="480" height="96" rx="14" fill="#F4F1EA"/>
+    <rect x="0" y="0" width="28" height="96" rx="10" fill="#E3C27A"/>
+    <rect x="0" y="164" width="480" height="96" rx="14" fill="#F4F1EA"/>
+    <rect x="0" y="164" width="28" height="96" rx="10" fill="#E3C27A"/>
+    <rect x="0" y="328" width="480" height="96" rx="14" fill="#F4F1EA"/>
+    <rect x="0" y="328" width="28" height="96" rx="10" fill="#E3C27A"/>
+  </g>
+</svg>
