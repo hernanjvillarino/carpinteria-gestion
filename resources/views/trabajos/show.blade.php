@@ -19,6 +19,12 @@
 
     <div class="grid gap-6 lg:grid-cols-3">
         <div class="space-y-6 lg:col-span-2">
+            @if ($isAdmin && $order->rating)
+                @include('partials.rating')
+            @endif
+
+            @include('partials.tasks')
+
             {{-- Registrar avance --}}
             <section class="card">
                 <h2 class="mb-3 font-semibold">Registrar avance</h2>
@@ -114,7 +120,13 @@
                 <p><span class="text-stone-500">Teléfono:</span> {{ $order->client->phone ?: '—' }}</p>
                 <p><span class="text-stone-500">Lugar:</span> {{ $order->install_address ?: $order->client->locationLabel() }}</p>
                 <p><span class="text-stone-500">Prioridad:</span> {{ $order->priority->label() }}</p>
-                <p><span class="text-stone-500">Entrega estimada:</span> {{ $order->estimated_delivery?->format('d/m/Y') ?? '—' }}</p>
+                <p><span class="text-stone-500">Plazo:</span> {{ $order->lead_time_days }} días desde el {{ $order->started_on?->format('d/m/Y') ?? '—' }}</p>
+                <p><span class="text-stone-500">Entrega estimada:</span>
+                    <span @class(['font-medium text-red-700' => ! $order->delivered_at && $order->estimated_delivery?->isPast()])>{{ $order->estimated_delivery?->format('d/m/Y') ?? '—' }}</span>
+                    @if (! $order->delivered_at && $order->estimated_delivery)
+                        <span class="text-stone-500">({{ $order->estimated_delivery->isPast() ? 'venció '.$order->estimated_delivery->diffForHumans() : 'faltan '.(int) today()->diffInDays($order->estimated_delivery).' días' }})</span>
+                    @endif
+                </p>
                 @if ($order->delivered_at)<p><span class="text-stone-500">Entregado:</span> {{ $order->delivered_at->format('d/m/Y') }}</p>@endif
                 <p><span class="text-stone-500">Carpinteros:</span>
                     {{ $order->carpenters->map(fn ($c) => $c->name.($c->pivot->is_lead ? ' (responsable)' : ''))->join(', ') ?: 'Sin asignar' }}

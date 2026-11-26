@@ -1,4 +1,9 @@
 <x-layouts.app title="Mis trabajos">
+    @if (config('webpush.vapid.public_key') && auth()->user()->pushSubscriptions()->doesntExist())
+        <a href="{{ route('avisos.index') }}" class="mb-4 block rounded-md border border-madera-100 bg-white px-4 py-3 text-sm text-madera-700">
+            Activá los avisos para enterarte en el celular cuando te asignen un trabajo.
+        </a>
+    @endif
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         @forelse ($orders as $order)
             <a href="{{ route('taller.trabajos.show', $order) }}" class="card block hover:border-madera-600">
@@ -15,6 +20,9 @@
                     @endif
                     @if ($order->pivot->is_lead)<span class="text-stone-500">· Sos responsable</span>@endif
                 </p>
+                @if ($order->pending_tasks_count)
+                    <p class="mt-2 text-sm text-amber-800">{{ $order->pending_tasks_count }} indicación(es) pendiente(s)</p>
+                @endif
             </a>
         @empty
             <p class="text-stone-500">No tenés trabajos asignados por ahora.</p>

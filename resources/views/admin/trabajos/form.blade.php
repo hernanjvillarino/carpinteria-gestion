@@ -45,9 +45,22 @@
                     @endforeach
                 </select>
             </div>
-            <div>
-                <label class="label" for="estimated_delivery">Entrega estimada</label>
-                <input class="input" id="estimated_delivery" type="date" name="estimated_delivery" value="{{ old('estimated_delivery', $order->estimated_delivery?->toDateString()) }}">
+            <div class="grid grid-cols-2 gap-3 sm:col-span-2">
+                <div>
+                    <label class="label" for="started_on">Inicio del plazo</label>
+                    <input class="input" id="started_on" type="date" name="started_on" value="{{ old('started_on', $order->started_on?->toDateString()) }}" required>
+                    @error('started_on')<p class="error">{{ $message }}</p>@enderror
+                </div>
+                <div>
+                    <label class="label" for="lead_time_days">Plazo (días)</label>
+                    <input class="input" id="lead_time_days" type="number" min="1" max="730" name="lead_time_days" value="{{ old('lead_time_days', $order->lead_time_days) }}" required>
+                    @error('lead_time_days')<p class="error">{{ $message }}</p>@enderror
+                </div>
+                <p class="col-span-2 text-xs text-stone-500" data-entrega>
+                    La entrega estimada se calcula sola: inicio + plazo.
+                    @if ($order->estimated_delivery) Hoy da <strong>{{ $order->estimated_delivery->format('d/m/Y') }}</strong>. @endif
+                    Por defecto son {{ config('carpinteria.default_lead_time_days') }} días; para un trabajo grande podés acordar más con el cliente.
+                </p>
             </div>
         </div>
 
@@ -65,6 +78,28 @@
                     <p class="px-3 py-2 text-sm text-stone-500">No hay carpinteros activos. <a class="underline" href="{{ route('admin.usuarios.create') }}">Crear uno</a>.</p>
                 @endforelse
             </div>
+        </fieldset>
+
+        <fieldset>
+            <legend class="label">Indicaciones para los carpinteros</legend>
+            @if ($order->exists && $order->tasks->isNotEmpty())
+                <ul class="mb-2 space-y-1 text-sm">
+                    @foreach ($order->tasks as $task)
+                        <li @class(['text-stone-400 line-through' => $task->isDone()])>• {{ $task->text }}</li>
+                    @endforeach
+                </ul>
+                <p class="mb-2 text-xs text-stone-500">Ya cargadas. Lo que tildes abajo se suma.</p>
+            @endif
+            @php($usedTemplates = $order->exists ? $order->tasks->pluck('instruction_template_id')->filter()->all() : [])
+            <div class="grid gap-1 rounded-md border border-stone-200 p-3 text-sm sm:grid-cols-2">
+                @forelse ($instructionTemplates->whereNotIn('id', $usedTemplates) as $template)
+                    <label class="flex items-start gap-2"><input class="mt-1" type="checkbox" name="instrucciones[]" value="{{ $template->id }}" @checked(in_array($template->id, old('instrucciones', [])))> {{ $template->text }}</label>
+                @empty
+                    <p class="text-stone-500">No hay indicaciones precargadas para tildar. <a class="underline" href="{{ route('admin.indicaciones.index') }}">Cargá tu lista</a>.</p>
+                @endforelse
+            </div>
+            <label class="label mt-3" for="instrucciones_extra">Otras indicaciones (una por línea)</label>
+            <textarea class="input" id="instrucciones_extra" name="instrucciones_extra" rows="2" placeholder="Ej.: Coordinar el acceso al barrio con la guardia">{{ old('instrucciones_extra') }}</textarea>
         </fieldset>
 
         <div class="flex gap-3"><button class="btn-primary">Guardar</button><a href="{{ $order->exists ? route('admin.trabajos.show', $order) : route('admin.trabajos.index') }}" class="btn">Cancelar</a></div>
