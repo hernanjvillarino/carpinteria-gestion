@@ -1,0 +1,25 @@
+{
+    "name": "carpinteria-app",
+    "private": true,
+    "description": "App nativa de Android e iPhone (Capacitor) que abre el sistema de la carpintería.",
+    "scripts": {
+        "sync": "cap sync",
+        "android": "cap open android",
+        "ios": "cap open ios",
+        "assets": "capacitor-assets generate --iconBackgroundColor '#17263A' --iconBackgroundColorDark '#17263A' --splashBackgroundColor '#17263A' --splashBackgroundColorDark '#17263A'"
+    },
+    "dependencies": {
+        "@capacitor-firebase/messaging": "^8.0.0",
+        "@capacitor/android": "^8.0.0",
+        "@capacitor/core": "^8.0.0",
+        "@capacitor/device": "^8.0.0",
+        "@capacitor/ios": "^8.0.0",
+        "@capacitor/splash-screen": "^8.0.0",
+        "firebase": "^12.6.0"
+    },
+    "devDependencies": {
+        "@capacitor/assets": "^4.0.0",
+        "@capacitor/cli": "^8.0.0",
+        "typescript": "^5.9.0"
+    }
+}

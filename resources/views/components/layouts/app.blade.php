@@ -8,6 +8,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="device-endpoint" content="{{ route('push.device.store') }}">
     <title>{{ $title ? $title.' · ' : '' }}{{ config('app.name') }}</title>
     <link rel="manifest" href="/manifest.webmanifest">
     <meta name="theme-color" content="#6f4520">
@@ -45,7 +46,7 @@
                     </a>
                 @endif
                 <span class="text-stone-500">{{ $user->name }}</span>
-                <form method="POST" action="{{ route('logout') }}">@csrf<button class="text-stone-500 underline hover:text-stone-800">Salir</button></form>
+                <form method="POST" action="{{ route('logout') }}" data-logout>@csrf<button class="text-stone-500 underline hover:text-stone-800">Salir</button></form>
             </div>
         </div>
     </header>

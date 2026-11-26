@@ -2,12 +2,15 @@
 
 namespace App\Notifications\Concerns;
 
+use App\Notifications\Channels\FcmChannel;
+use App\Services\FcmClient;
 use NotificationChannels\WebPush\WebPushChannel;
 use NotificationChannels\WebPush\WebPushMessage;
 
 /**
  * Avisos internos: quedan en la campanita del sistema y, si el usuario activó
- * las notificaciones en el celular o la compu, también llegan como push.
+ * las notificaciones en el celular o la compu, también llegan como push
+ * (Web Push en el navegador, FCM en la app nativa de Android / iPhone).
  *
  * Cada notificación define appMessage(): ['title' => ..., 'body' => ..., 'url' => ...].
  */
@@ -22,6 +25,9 @@ trait SendsAppNotification
         if (config('webpush.vapid.public_key') && method_exists($notifiable, 'pushSubscriptions') && $notifiable->pushSubscriptions()->exists()) {
             $channels[] = WebPushChannel::class;
         }
+        if (FcmClient::configured() && method_exists($notifiable, 'deviceTokens') && $notifiable->deviceTokens()->exists()) {
+            $channels[] = FcmChannel::class;
+        }
 
         return $channels;
     }
@@ -29,6 +35,12 @@ trait SendsAppNotification
     public function toArray(object $notifiable): array
     {
         return $this->appMessage($notifiable);
+    }
+
+    /** @return array{title: string, body: string, url: string} */
+    public function toFcm(object $notifiable): array
+    {
+        return [...$this->appMessage($notifiable), 'url' => route('avisos.open', $this->id)];
     }
 
     public function toWebPush(object $notifiable, $notification): WebPushMessage

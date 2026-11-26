@@ -54,6 +54,12 @@ class User extends Authenticatable
     }
 
     /** Ficha de cliente vinculada a este acceso. */
+    /** Celulares con la app nativa que reciben avisos push por FCM. */
+    public function deviceTokens(): HasMany
+    {
+        return $this->hasMany(DeviceToken::class);
+    }
+
     public function client(): HasOne
     {
         return $this->hasOne(Client::class);

@@ -1,6 +1,11 @@
 // App instalable (PWA): service worker, avisos push y actualizaciones en vivo.
+// Dentro de la app nativa (Capacitor) los avisos van por Firebase: ver native.js.
 
-if ('serviceWorker' in navigator) {
+import { isNativeApp, setupNativeApp } from './native';
+
+if (isNativeApp()) {
+    setupNativeApp();
+} else if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
 }
 
@@ -33,11 +38,12 @@ if (bell) {
         } catch {}
     };
     setInterval(update, 30000);
+    document.addEventListener('avisos:nuevo', update);
 }
 
 // Activar / desactivar avisos en este dispositivo.
 const pushBox = document.querySelector('[data-push]');
-if (pushBox) {
+if (pushBox && !isNativeApp()) {
     const status = pushBox.querySelector('[data-push-status]');
     const button = pushBox.querySelector('button');
     const key = pushBox.dataset.vapidKey;

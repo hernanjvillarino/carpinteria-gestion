@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\DesignFileController;
+use App\Http\Controllers\DeviceTokenController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Portal\PortalController;
@@ -37,6 +38,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/avisos/{id}', [NotificationController::class, 'open'])->name('avisos.open');
     Route::post('/push/suscripcion', [PushSubscriptionController::class, 'store'])->name('push.store');
     Route::delete('/push/suscripcion', [PushSubscriptionController::class, 'destroy'])->name('push.destroy');
+    Route::post('/push/dispositivo', [DeviceTokenController::class, 'store'])->name('push.device.store');
+    Route::delete('/push/dispositivo', [DeviceTokenController::class, 'destroy'])->name('push.device.destroy');
     Route::get('/calificaciones/fotos/{photo}', [RatingController::class, 'photo'])->name('calificaciones.fotos');
     Route::get('/fotos/{photo}', [WorkOrderPhotoController::class, 'show'])->name('fotos.show');
     Route::get('/disenos/{design}/imagen', [DesignFileController::class, 'preview'])->name('disenos.preview');
