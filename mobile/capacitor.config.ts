@@ -4,23 +4,27 @@ import { writeFileSync } from 'node:fs';
 // La app abre el sistema publicado (Laravel) dentro de un WebView nativo.
 // CARPINTERIA_URL se define al compilar; en desarrollo puede ser la IP de la compu,
 // por ejemplo CARPINTERIA_URL=http://192.168.0.10:8000 npx cap sync
-const url = process.env.CARPINTERIA_URL ?? 'https://gestion.example.com';
-const host = new URL(url).host;
+//
+// Sin CARPINTERIA_URL (o con "muestra") se arma la versión de muestra: funciona sin
+// servidor, con datos ficticios, a partir de muestra/index.html.
+const url = process.env.CARPINTERIA_URL && process.env.CARPINTERIA_URL !== 'muestra' ? process.env.CARPINTERIA_URL : null;
 
 // La pantalla "sin conexión" (www/sin-conexion.html) necesita saber a dónde reintentar.
-writeFileSync('www/destino.js', `window.CARPINTERIA_URL = ${JSON.stringify(`${url}/panel`)};\n`);
+if (url) writeFileSync('www/destino.js', `window.CARPINTERIA_URL = ${JSON.stringify(`${url}/panel`)};\n`);
 
 const config: CapacitorConfig = {
     // Identificador único en Play Store y App Store: no se puede cambiar después de publicar.
     appId: 'com.carpinteria.gestion',
     appName: 'Carpintería',
-    webDir: 'www',
-    server: {
-        url: `${url}/panel`,
-        allowNavigation: [host],
-        cleartext: url.startsWith('http://'),
-        errorPath: 'sin-conexion.html',
-    },
+    webDir: url ? 'www' : 'muestra',
+    server: url
+        ? {
+              url: `${url}/panel`,
+              allowNavigation: [new URL(url).host],
+              cleartext: url.startsWith('http://'),
+              errorPath: 'sin-conexion.html',
+          }
+        : undefined,
     android: {
         // Para depurar el WebView desde chrome://inspect solo en builds de prueba.
         webContentsDebuggingEnabled: false,
@@ -40,6 +44,11 @@ const config: CapacitorConfig = {
         },
     },
     plugins: {
+        // Barra de estado con íconos claros sobre el azul marino; la página no se mete debajo.
+        SystemBars: {
+            insetsHandling: 'css',
+            style: 'DARK',
+        },
         SplashScreen: {
             launchShowDuration: 800,
             backgroundColor: '#17263A',

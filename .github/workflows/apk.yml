@@ -5,14 +5,15 @@ name: APK de prueba (Android)
 #
 # La URL del sistema sale de la variable del repositorio CARPINTERIA_URL
 # (Settings → Secrets and variables → Actions → Variables) o del campo al
-# lanzarlo a mano. Si existe el secreto GOOGLE_SERVICES_JSON (contenido de
+# lanzarlo a mano. Sin URL se arma la versión de muestra, con datos ficticios
+# y sin servidor. Si existe el secreto GOOGLE_SERVICES_JSON (contenido de
 # google-services.json de Firebase) se incluyen los avisos push.
 
 on:
   workflow_dispatch:
     inputs:
       url:
-        description: 'URL del sistema (por ejemplo https://gestion.midominio.com.ar)'
+        description: 'URL del sistema (por ejemplo https://gestion.midominio.com.ar). Vacío: versión de muestra'
         required: false
   push:
     paths: ['mobile/**', 'resources/js/native.js', '.github/workflows/apk.yml']
@@ -26,7 +27,7 @@ jobs:
       run:
         working-directory: mobile
     env:
-      CARPINTERIA_URL: ${{ inputs.url || vars.CARPINTERIA_URL || 'https://gestion.example.com' }}
+      CARPINTERIA_URL: ${{ inputs.url || vars.CARPINTERIA_URL || 'muestra' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -69,4 +70,6 @@ jobs:
           retention-days: 30
 
       - name: Resumen
-        run: echo "APK armado para **$CARPINTERIA_URL**. Descargalo en *Artifacts* más abajo." >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          if [ "$CARPINTERIA_URL" = muestra ]; then destino="la **versión de muestra** (datos ficticios, sin servidor)"; else destino="**$CARPINTERIA_URL**"; fi
+          echo "APK armado para $destino. Descargalo en *Artifacts* más abajo." >> "$GITHUB_STEP_SUMMARY"

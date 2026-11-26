@@ -61,7 +61,11 @@ El workflow `.github/workflows/apk.yml` arma un APK instalable en GitHub
 Actions cada vez que cambia `mobile/`, o a mano desde *Actions → APK de prueba
 (Android) → Run workflow*, donde se puede escribir la URL del sistema.
 
-1. Definir la URL una vez: *Settings → Secrets and variables → Actions →
+Sin URL se arma la **versión de muestra**: funciona sin servidor, con datos
+ficticios (es la muestra navegable del rediseño, `mobile/muestra/index.html`,
+con selector "Ver como dueño / carpintero / cliente"). Nada se guarda.
+
+1. Cuando el sistema esté online, definir la URL una vez: *Settings → Secrets and variables → Actions →
    Variables → New repository variable* `CARPINTERIA_URL`.
 2. Opcional, para avisos push: secreto `GOOGLE_SERVICES_JSON` con el
    contenido de `google-services.json` de Firebase.
