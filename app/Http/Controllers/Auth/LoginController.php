@@ -45,6 +45,11 @@ class LoginController extends Controller
 
     public function destroy(Request $request): RedirectResponse
     {
+        // Desde la app nativa: el celular deja de recibir avisos de esta cuenta.
+        if ($request->filled('device_token')) {
+            $request->user()?->deviceTokens()->where('token', $request->input('device_token'))->delete();
+        }
+
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

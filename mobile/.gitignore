@@ -1,0 +1,9 @@
+node_modules/
+# Credenciales de Firebase: se bajan de la consola y no van al repositorio.
+android/app/google-services.json
+ios/App/App/GoogleService-Info.plist
+# Firma de la app
+*.jks
+*.keystore
+keystore.properties
+www/destino.js

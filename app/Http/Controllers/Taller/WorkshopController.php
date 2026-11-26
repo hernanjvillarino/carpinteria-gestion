@@ -16,7 +16,7 @@ class WorkshopController extends Controller
     public function index(Request $request): View
     {
         $orders = $request->user()->assignedWorkOrders()
-            ->with(['client.gatedCommunity', 'stage'])
+            ->with(['client.gatedCommunity', 'stage'])->withCount(['tasks as pending_tasks_count' => fn ($q) => $q->whereNull('done_at')])
             ->whereNull('delivered_at')
             ->orderByRaw("case priority when 'alta' then 0 when 'normal' then 1 else 2 end")
             ->orderBy('estimated_delivery')
@@ -28,7 +28,7 @@ class WorkshopController extends Controller
     public function show(WorkOrder $trabajo): View
     {
         Gate::authorize('view', $trabajo);
-        $trabajo->load(['client.gatedCommunity', 'stage', 'carpenters', 'designs', 'stockMovements' => fn ($q) => $q->with(['material', 'user']), 'updates' => fn ($q) => $q->with(['user', 'fromStage', 'toStage', 'photos'])]);
+        $trabajo->load(['client.gatedCommunity', 'stage', 'carpenters', 'designs', 'tasks.doneBy', 'stockMovements' => fn ($q) => $q->with(['material', 'user']), 'updates' => fn ($q) => $q->with(['user', 'fromStage', 'toStage', 'photos'])]);
 
         return view('trabajos.show', [
             'order' => $trabajo,

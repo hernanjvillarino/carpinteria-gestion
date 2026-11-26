@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    // Avisos push de la app nativa (Android e iPhone) vía Firebase Cloud Messaging.
+    // FCM_CREDENTIALS: ruta al JSON de la cuenta de servicio de Firebase (fuera de public/).
+    'fcm' => [
+        'project_id' => env('FCM_PROJECT_ID'),
+        'credentials' => env('FCM_CREDENTIALS'),
+    ],
+
 ];

@@ -30,6 +30,10 @@
         @endunless
     </section>
 
+    @if ($order->delivered_at)
+        @include('portal.partials.rating')
+    @endif
+
     {{-- Presupuesto para responder --}}
     @if ($pendingQuote)
         <section class="card mb-6 border-amber-300">

@@ -1,5 +1,5 @@
 <x-layouts.app title="Equipo">
-    <x-slot:actions><a href="{{ route('admin.usuarios.create') }}" class="btn-primary">Nuevo usuario</a></x-slot:actions>
+    <x-slot:actions><a href="{{ route('admin.indicaciones.index') }}" class="btn">Indicaciones precargadas</a> <a href="{{ route('admin.usuarios.create') }}" class="btn-primary">Nuevo usuario</a></x-slot:actions>
     <p class="mb-4 text-sm text-stone-600">Administradores y carpinteros. Los accesos de clientes se dan desde la ficha de cada cliente.</p>
     <div class="card overflow-x-auto !p-0">
         <table class="table">

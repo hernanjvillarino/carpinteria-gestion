@@ -39,6 +39,8 @@ class WorkOrderTest extends TestCase
             'client_id' => $client->id,
             'title' => 'Cocina completa',
             'priority' => 'alta',
+            'started_on' => '2026-12-01',
+            'lead_time_days' => 45,
             'carpinteros' => [$juan->id, $martin->id],
             'lead_id' => $martin->id,
         ])->assertRedirect();
@@ -46,6 +48,7 @@ class WorkOrderTest extends TestCase
         $order = WorkOrder::sole();
         $this->assertSame('T-'.now()->year.'-0001', $order->code);
         $this->assertSame($this->stage(1)->id, $order->stage_id);
+        $this->assertSame('2027-01-15', $order->estimated_delivery->toDateString());
         $this->assertEqualsCanonicalizing([$juan->id, $martin->id], $order->carpenters->pluck('id')->all());
         $this->assertTrue((bool) $order->carpenters->firstWhere('id', $martin->id)->pivot->is_lead);
     }

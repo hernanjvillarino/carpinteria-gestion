@@ -5,7 +5,10 @@ namespace Database\Seeders;
 use App\Enums\StockMovementType;
 use App\Models\BoardColor;
 use App\Models\Client;
+use App\Models\DocumentType;
+use App\Models\Employee;
 use App\Models\GatedCommunity;
+use App\Models\InstructionTemplate;
 use App\Models\Material;
 use App\Models\MaterialCategory;
 use App\Models\Stage;
@@ -13,6 +16,7 @@ use App\Models\Supplier;
 use App\Models\User;
 use App\Models\WorkOrder;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Storage;
 
 class DatabaseSeeder extends Seeder
 {
@@ -38,17 +42,74 @@ class DatabaseSeeder extends Seeder
             Client::factory()->create(['gated_community_id' => null, 'address' => 'Av. Libertador 1234, San Isidro']),
         ]);
 
+        User::factory()->carpintero()->create(['name' => 'Sergio Ruiz', 'email' => 'sergio@carpinteria.test']); // sin trabajos: figura libre
+
+        $this->call(InstructionTemplateSeeder::class);
+        $templates = InstructionTemplate::query()->active()->pluck('id');
+
         $stages = Stage::ordered();
-        foreach ($clientes as $i => $cliente) {
+        // [etapa (posición), días desde el inicio, plazo en días]
+        $plan = [[2, 5, 30], [5, 20, 30], [8, 40, 45], [6, 32, 30]];
+        foreach ($clientes->concat([$clientes[0]]) as $i => $cliente) {
+            [$position, $since, $days] = $plan[$i];
             $order = WorkOrder::factory()->create([
                 'client_id' => $cliente->id,
-                'stage_id' => $stages[min($i * 3 + 1, $stages->count() - 1)]->id,
+                'title' => ['Cocina completa con isla', 'Placard dormitorio principal', 'Vestidor en L', 'Mueble de TV flotante'][$i],
+                'stage_id' => $stages->firstWhere('position', $position)->id,
+                'started_on' => today()->subDays($since),
+                'lead_time_days' => $days,
                 'created_by' => $admin->id,
             ]);
+            $order->addTasks($admin, $templates->shuffle()->take(3)->all());
             $order->carpenters()->attach($carpinteros[$i % 2]->id, ['is_lead' => true]);
+
+            $carpintero = $carpinteros[$i % 2];
+            $order->updates()->create(['user_id' => $carpintero->id, 'comment' => 'Arranqué con el trabajo, revisé medidas y materiales.', 'created_at' => now()->subDays(min($since, 3))->subHours($i)]);
+            $order->updates()->create(['user_id' => $carpintero->id, 'from_stage_id' => $stages->firstWhere('position', $position - 1)->id, 'to_stage_id' => $order->stage_id, 'comment' => 'Etapa terminada.', 'created_at' => now()->subHours(2 + $i * 5)]);
         }
 
+        // Un trabajo ya entregado y calificado por el cliente.
+        $entregado = WorkOrder::factory()->create([
+            'client_id' => $clientes[0]->id, 'title' => 'Biblioteca de living', 'stage_id' => $stages->last()->id,
+            'started_on' => today()->subDays(70), 'lead_time_days' => 45, 'delivered_at' => today()->subDays(22), 'created_by' => $admin->id,
+        ]);
+        $entregado->carpenters()->attach($carpinteros[0]->id, ['is_lead' => true]);
+        $entregado->rating()->create([
+            'user_id' => $clienteUser->id, 'score_work' => 5, 'score_materials' => 5, 'score_installation' => 4, 'score_staff' => 5, 'score_service' => 4,
+            'comment' => 'Quedó hermosa. La instalación se demoró un día, pero el equipo fue muy prolijo.',
+        ]);
+
         $this->seedStock($admin);
+        $this->seedStaffDocuments($admin, $carpinteros, $barrios);
+    }
+
+    /** Personal con documentación: uno al día, uno con la ART por vencer y un ayudante sin seguro. */
+    private function seedStaffDocuments(User $admin, $carpinteros, $barrios): void
+    {
+        $types = DocumentType::query()->pluck('id', 'name');
+        $barrios[0]->requiredDocumentTypes()->sync([$types['ART'], $types['Seguro de accidentes personales'], $types['DNI']]);
+        $barrios[1]->requiredDocumentTypes()->sync([$types['ART'], $types['DNI']]);
+        DocumentType::create(['name' => 'Credencial de ingreso', 'requires_expiry' => true, 'gated_community_id' => $barrios[1]->id]);
+
+        $people = [
+            [$carpinteros[0], ['ART' => 120, 'Seguro de accidentes personales' => 90, 'DNI' => null]],
+            [$carpinteros[1], ['ART' => 6, 'Seguro de accidentes personales' => 200, 'DNI' => null]],
+            [null, ['ART' => 120, 'DNI' => null]],
+        ];
+        foreach ($people as $i => [$user, $docs]) {
+            $employee = Employee::firstOrCreate(
+                ['user_id' => $user?->id, 'name' => $user?->name ?? 'Diego Acosta'],
+                ['dni' => (string) (30111222 + $i * 1111), 'cuil' => '20-'.(30111222 + $i * 1111).'-'.$i]
+            );
+            foreach ($docs as $name => $days) {
+                $path = "personal/{$employee->id}/ejemplo-".str($name)->slug().'.pdf';
+                Storage::disk('local')->put($path, '%PDF-1.4 ejemplo');
+                $employee->documents()->create([
+                    'document_type_id' => $types[$name], 'path' => $path, 'original_name' => str($name)->slug().'.pdf',
+                    'mime' => 'application/pdf', 'size' => 16, 'expires_on' => $days === null ? null : today()->addDays($days), 'uploaded_by' => $admin->id,
+                ]);
+            }
+        }
     }
 
     private function seedStock(User $admin): void
